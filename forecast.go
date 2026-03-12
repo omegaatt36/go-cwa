@@ -8,12 +8,34 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
+
+const cwaTimeFormat = "2006-01-02T15:04:05"
+
+func addTimeParams(v url.Values, startTime, endTime, timeFrom, timeTo *time.Time) {
+	if startTime != nil {
+		v.Set("startTime", startTime.Format(cwaTimeFormat))
+	}
+	if endTime != nil {
+		v.Set("endTime", endTime.Format(cwaTimeFormat))
+	}
+	if timeFrom != nil {
+		v.Set("timeFrom", timeFrom.Format(cwaTimeFormat))
+	}
+	if timeTo != nil {
+		v.Set("timeTo", timeTo.Format(cwaTimeFormat))
+	}
+}
 
 // Forecast36hParams defines parameters for the 36-hour forecast API.
 type Forecast36hParams struct {
 	LocationNames []County
 	ElementNames  []string
+	StartTime     *time.Time
+	EndTime       *time.Time
+	TimeFrom      *time.Time
+	TimeTo        *time.Time
 }
 
 // Get36hForecast returns the 36-hour weather forecast.
@@ -32,6 +54,7 @@ func (c *Client) Get36hForecast(ctx context.Context, params *Forecast36hParams) 
 		if len(params.ElementNames) > 0 {
 			v.Set("elementName", strings.Join(params.ElementNames, ","))
 		}
+		addTimeParams(v, params.StartTime, params.EndTime, params.TimeFrom, params.TimeTo)
 	}
 
 	u := fmt.Sprintf("%s/v1/rest/datastore/F-C0032-001?%s", c.baseURL, v.Encode())
@@ -49,10 +72,17 @@ type TownshipForecastParams struct {
 	County        County
 	Period        Period
 	LocationNames []string
+	StartTime     *time.Time
+	EndTime       *time.Time
+	TimeFrom      *time.Time
+	TimeTo        *time.Time
 }
 
 // GetTownshipForecast returns the township forecast for the given county and period.
-func (c *Client) GetTownshipForecast(ctx context.Context, params TownshipForecastParams) (*Response[map[string]any], error) {
+func (c *Client) GetTownshipForecast(ctx context.Context, params *TownshipForecastParams) (*Response[map[string]any], error) {
+	if params == nil {
+		return nil, fmt.Errorf("params cannot be nil")
+	}
 	countyMap, ok := townshipDatasetIDs[params.County]
 	if !ok {
 		return nil, fmt.Errorf("unsupported county: %s", params.County)
@@ -67,6 +97,7 @@ func (c *Client) GetTownshipForecast(ctx context.Context, params TownshipForecas
 	if len(params.LocationNames) > 0 {
 		v.Set("locationName", strings.Join(params.LocationNames, ","))
 	}
+	addTimeParams(v, params.StartTime, params.EndTime, params.TimeFrom, params.TimeTo)
 
 	u := fmt.Sprintf("%s/v1/rest/datastore/%s?%s", c.baseURL, datasetID, v.Encode())
 

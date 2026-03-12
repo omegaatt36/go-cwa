@@ -52,10 +52,11 @@ if forecast.IsSuccess() {
 ### 3. Get Township Forecast
 
 ```go
-resp, err := client.GetTownshipForecast(context.Background(), cwa.TownshipForecastParams{
-    County: cwa.HsinchuCounty,
-    Period: cwa.ThreeDays,
+resp, err := client.GetTownshipForecast(context.Background(), &cwa.TownshipForecastParams{
+	County: cwa.TaipeiCity,
+	Period: cwa.ThreeDays,
 })
+
 if err != nil {
     panic(err)
 }
